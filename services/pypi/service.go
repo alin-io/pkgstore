@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type PypiPackageMetadata struct {
+type PackageMetadata struct {
 	RequiresPython string   `json:"requires_python"`
 	OriginalFiles  []string `json:"original_files"`
 }

@@ -9,7 +9,7 @@ import (
 
 func (s *Service) MetadataHandler(c *gin.Context) {
 	pkgName := c.GetString("pkgName")
-	pkg := models.Package[PypiPackageMetadata]{}
+	pkg := models.Package[PackageMetadata]{}
 	err := pkg.FillByName(pkgName, s.Prefix)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Error while trying to get package info"})

@@ -10,8 +10,8 @@ import (
 func (s *Service) DownloadHandler(c *gin.Context) {
 	filename := c.GetString("filename")
 	pkgName, version := s.PkgVersionFromFilename(filename)
-	pkg := models.Package[PypiPackageMetadata]{}
-	versionInfo := models.PackageVersion[PypiPackageMetadata]{}
+	pkg := models.Package[PackageMetadata]{}
+	versionInfo := models.PackageVersion[PackageMetadata]{}
 	err := pkg.FillByName(pkgName, s.Prefix)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Error while trying to get package info"})

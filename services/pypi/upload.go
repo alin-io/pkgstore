@@ -44,8 +44,8 @@ func (s *Service) UploadHandler(c *gin.Context) {
 	filenamePostfix := s.FilenamePostfix(file.Filename, pkgName, pkgVersionName)
 	storageFilename := s.PackageFilename(checksum, filenamePostfix)
 
-	packageModel := models.Package[PypiPackageMetadata]{}
-	pkgVersion := models.PackageVersion[PypiPackageMetadata]{}
+	packageModel := models.Package[PackageMetadata]{}
+	pkgVersion := models.PackageVersion[PackageMetadata]{}
 	_ = packageModel.FillByName(pkgName, s.Prefix)
 	if packageModel.Id > 0 {
 		pkgVersion, err = packageModel.Version(pkgVersionName)
@@ -72,22 +72,22 @@ func (s *Service) UploadHandler(c *gin.Context) {
 			}
 		}
 	} else {
-		pkgVersion = models.PackageVersion[PypiPackageMetadata]{
+		pkgVersion = models.PackageVersion[PackageMetadata]{
 			Digest:  checksum,
 			Version: pkgVersionName,
 			Size:    uint64(size),
-			Metadata: datatypes.NewJSONType(PypiPackageMetadata{
+			Metadata: datatypes.NewJSONType(PackageMetadata{
 				RequiresPython: c.PostForm("requires_python"),
 				OriginalFiles:  []string{file.Filename},
 			}),
 		}
 
-		packageModel = models.Package[PypiPackageMetadata]{
+		packageModel = models.Package[PackageMetadata]{
 			Name:      pkgName,
 			Service:   s.Prefix,
 			Namespace: "",
 			AuthId:    c.GetString("token"),
-			Versions: []models.PackageVersion[PypiPackageMetadata]{
+			Versions: []models.PackageVersion[PackageMetadata]{
 				pkgVersion,
 			},
 		}

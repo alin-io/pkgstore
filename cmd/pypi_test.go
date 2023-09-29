@@ -35,7 +35,7 @@ func TestPypiPackageUpload(t *testing.T) {
 	serverApp.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
-	versionInfo := pypi.PypiPackageMetadata{}
+	versionInfo := pypi.PackageMetadata{}
 	err := json.Unmarshal(w.Body.Bytes(), &versionInfo)
 	assert.Nil(t, err)
 	assert.Equal(t, fmt.Sprintf("%s-%s.tar.gz", pkgName, version), versionInfo.OriginalFiles[0])
@@ -45,7 +45,7 @@ func TestPypiPackageUpload(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestPypiPackageMetadata(t *testing.T) {
+func TestPackageMetadata(t *testing.T) {
 	t.Run("should respond with 404 if requested package doesn't exist", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/pypi/simple/some-package-name", nil)
