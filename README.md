@@ -11,7 +11,7 @@ The database is a simple SQLite file, which is configurable from the environment
 To run locally, you will need the Minio service instance, which is configured in Docker-Compose
 
 ```bash
-~# docker-compose up -d minio
+~# container-compose up -d minio
 ~# go run ./cmd/server
 
 [GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.

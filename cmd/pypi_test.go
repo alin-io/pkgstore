@@ -45,7 +45,7 @@ func TestPypiPackageUpload(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestPackageMetadata(t *testing.T) {
+func TestPypiPackageMetadata(t *testing.T) {
 	t.Run("should respond with 404 if requested package doesn't exist", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/pypi/simple/some-package-name", nil)
@@ -55,21 +55,22 @@ func TestPackageMetadata(t *testing.T) {
 	})
 
 	t.Run("should respond with metadata JSON if package exists", func(t *testing.T) {
-		pkgName := uuid.NewString()
-		w, req := UploadTestPypiPackage(pkgName, "0.0.1")
-		serverApp.ServeHTTP(w, req)
+		for _, pkgName := range []string{uuid.NewString(), uuid.NewString() + "/" + uuid.NewString()} {
+			w, req := UploadTestPypiPackage(pkgName, "0.0.1")
+			serverApp.ServeHTTP(w, req)
 
-		assert.Equal(t, 200, w.Code)
-		w.Flush()
+			assert.Equal(t, 200, w.Code)
+			w.Flush()
 
-		w = httptest.NewRecorder()
-		req, _ = http.NewRequest("GET", "/pypi/simple/"+pkgName, nil)
-		serverApp.ServeHTTP(w, req)
+			w = httptest.NewRecorder()
+			req, _ = http.NewRequest("GET", "/pypi/simple/"+pkgName, nil)
+			serverApp.ServeHTTP(w, req)
 
-		assert.Equal(t, 200, w.Code)
-		assert.Contains(t, w.Body.String(), fmt.Sprintf(`href="%s/files/`, config.Get().RegistryHost))
-		err := DeleteTestPackage(pkgName, "pypi")
-		assert.Nil(t, err)
+			assert.Equal(t, 200, w.Code)
+			assert.Contains(t, w.Body.String(), fmt.Sprintf(`href="%s/files/`, config.Get().RegistryHost))
+			err := DeleteTestPackage(pkgName, "pypi")
+			assert.Nil(t, err)
+		}
 	})
 }
 
@@ -117,7 +118,7 @@ func UploadTestPypiPackage(name, version string) (*httptest.ResponseRecorder, *h
 
 	_ = formWriter.Close()
 
-	req, _ := http.NewRequest("POST", "/pypi/"+name, bodyBuffer)
+	req, _ := http.NewRequest("POST", "/pypi", bodyBuffer)
 	req.Header.Set("Content-Type", formWriter.FormDataContentType())
 	return w, req
 }

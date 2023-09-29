@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Service) DownloadHandler(c *gin.Context) {
-	filename := c.GetString("filename")
+	filename := c.Param("filename")
 	pkgName, version := s.PkgVersionFromFilename(filename)
 	pkg := models.Package[PackageMetadata]{}
 	versionInfo := models.PackageVersion[PackageMetadata]{}

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"github.com/alin-io/pkgproxy/services"
 	"github.com/alin-io/pkgproxy/storage"
-	"github.com/gin-gonic/gin"
-	"regexp"
 	"strings"
 )
 
@@ -38,30 +36,4 @@ func (s *Service) constructPackageOriginalFilename(name, version, postfix string
 
 func (s *Service) FilenamePostfix(filename, pkgName, pkgVersionName string) (postfix string) {
 	return strings.Replace(filename, s.constructPackageOriginalFilename(pkgName, pkgVersionName, ""), "", 1)
-}
-
-func (s *Service) PkgInfoFromRequestPath(c *gin.Context) (pkgName string, filename string) {
-	pkgPath := c.Param("path")
-
-	// /:pkgName/
-	pattern := `^/(files/|simple/)?([a-z0-9]{64}/)?(?P<pkgName>[^/]+)(?:/)?$`
-	re := regexp.MustCompile(pattern)
-
-	matches := re.FindStringSubmatch(pkgPath)
-	if matches == nil {
-		return "", ""
-	}
-
-	for i, name := range re.SubexpNames() {
-		if name == "pkgName" {
-			if strings.Index(pkgPath, "/files/") == 0 {
-				filename = matches[i]
-				pkgName, _ = s.PkgVersionFromFilename(filename)
-			} else {
-				pkgName = matches[i]
-			}
-		}
-	}
-
-	return pkgName, filename
 }

@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"github.com/alin-io/pkgproxy/config"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"io"
 	"log"
 )
@@ -39,7 +41,7 @@ func NewS3Backend() *S3Backend {
 	}
 }
 
-func (s *S3Backend) WriteFile(key string, fileMeta interface{}, r io.ReadSeeker) error {
+func (s *S3Backend) WriteFile(key string, fileMeta interface{}, r io.Reader) error {
 	metadata := make(map[string]*string)
 	if fileMeta != nil {
 		metadataBuffer, err := json.Marshal(fileMeta)
@@ -51,13 +53,12 @@ func (s *S3Backend) WriteFile(key string, fileMeta interface{}, r io.ReadSeeker)
 			return err
 		}
 	}
-	putObjectInput := &s3.PutObjectInput{
-		Bucket:   aws.String(s.Bucket),
-		Key:      aws.String(key),
-		Body:     r,
-		Metadata: metadata,
-	}
-	_, err := s.s3.PutObject(putObjectInput)
+	uploader := s3manager.NewUploader(s.s3Session, func(u *s3manager.Uploader) {})
+	_, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(s.Bucket),
+		Key:    aws.String(key),
+		Body:   r,
+	})
 	return err
 }
 
@@ -68,9 +69,36 @@ func (s *S3Backend) GetFile(key string) (io.ReadCloser, error) {
 	}
 	obj, err := s.s3.GetObject(getObjectInput)
 	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case s3.ErrCodeNoSuchBucket:
+				return nil, nil
+			case s3.ErrCodeNoSuchKey:
+				return nil, nil
+			}
+		}
 		return nil, err
 	}
 	return obj.Body, nil
+}
+
+func (s *S3Backend) CopyFile(fromKey, toKey string) error {
+	_, err := s.s3.CopyObject(&s3.CopyObjectInput{
+		Bucket:     aws.String(s.Bucket),
+		CopySource: aws.String(fromKey),
+		Key:        aws.String(toKey),
+	})
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case s3.ErrCodeNoSuchBucket:
+				return nil
+			case s3.ErrCodeNoSuchKey:
+				return nil
+			}
+		}
+	}
+	return err
 }
 
 func (s *S3Backend) DeleteFile(key string) error {
@@ -79,6 +107,16 @@ func (s *S3Backend) DeleteFile(key string) error {
 		Key:    aws.String(key),
 	}
 	_, err := s.s3.DeleteObject(deleteObjectInput)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case s3.ErrCodeNoSuchBucket:
+				return nil
+			case s3.ErrCodeNoSuchKey:
+				return nil
+			}
+		}
+	}
 	return err
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Service) MetadataHandler(c *gin.Context) {
-	pkgName := c.GetString("pkgName")
+	pkgName := s.ConstructFullPkgName(c)
 	pkg := models.Package[PackageMetadata]{}
 	err := pkg.FillByName(pkgName, s.Prefix)
 	if err != nil {

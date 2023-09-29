@@ -6,14 +6,14 @@ import (
 )
 
 type MetadataResponse struct {
-	Name     string                        `json:"name"`
-	DistTags map[string]string             `json:"dist-tags"`
-	Versions map[string]npmPackageMetadata `json:"versions"`
+	Name     string                     `json:"name"`
+	DistTags map[string]string          `json:"dist-tags"`
+	Versions map[string]PackageMetadata `json:"versions"`
 }
 
 func (s *Service) MetadataHandler(c *gin.Context) {
-	pkgName := c.GetString("pkgName")
-	pkg := models.Package[npmPackageMetadata]{}
+	pkgName := s.ConstructFullPkgName(c)
+	pkg := models.Package[PackageMetadata]{}
 	err := pkg.FillByName(pkgName, s.Prefix)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Error while trying to get package info"})
@@ -36,7 +36,7 @@ func (s *Service) MetadataHandler(c *gin.Context) {
 		return
 	}
 
-	result := MetadataResponse{Name: pkgName, DistTags: make(map[string]string), Versions: make(map[string]npmPackageMetadata)}
+	result := MetadataResponse{Name: pkgName, DistTags: make(map[string]string), Versions: make(map[string]PackageMetadata)}
 
 	for _, version := range pkg.Versions {
 		result.Versions[version.Version] = version.Metadata.Data()

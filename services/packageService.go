@@ -17,7 +17,7 @@ import (
 type PackageService interface {
 	PackageFilename(digest, postfix string) string
 	PkgVersionFromFilename(filename string) (pkgName string, version string)
-	PkgInfoFromRequestPath(c *gin.Context) (pkgName string, filename string)
+	ConstructFullPkgName(c *gin.Context) (pkgName string)
 
 	UploadHandler(c *gin.Context)
 	DownloadHandler(c *gin.Context)
@@ -61,6 +61,15 @@ func (s *BasePackageService) ChecksumReader(r io.Reader) (checksum string, size 
 		return "", 0, err
 	}
 	return hex.EncodeToString(h.Sum(nil)), size, nil
+}
+
+func (s *BasePackageService) ConstructFullPkgName(c *gin.Context) string {
+	pkgName := c.Param("name")
+	pkgName2 := c.Param("name2")
+	if len(pkgName2) > 0 {
+		pkgName = fmt.Sprintf("%s/%s", pkgName, pkgName2)
+	}
+	return pkgName
 }
 
 func (s *BasePackageService) ProxyToPublicRegistry(c *gin.Context) {

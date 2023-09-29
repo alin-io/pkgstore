@@ -25,7 +25,7 @@ func NewInMemoryBackend() *InMemoryBackend {
 	}
 }
 
-func (s *InMemoryBackend) WriteFile(key string, fileMeta interface{}, r io.ReadSeeker) error {
+func (s *InMemoryBackend) WriteFile(key string, fileMeta interface{}, r io.Reader) error {
 	fileBuffer := bytes.NewBuffer([]byte{})
 	_, err := io.Copy(fileBuffer, r)
 	if err != nil {
@@ -57,6 +57,11 @@ func (s *InMemoryBackend) GetMetadata(key string, value interface{}) error {
 		return err
 	}
 	return json.Unmarshal(fileMetaBytes, value)
+}
+
+func (s *InMemoryBackend) CopyFile(fromKey, toKey string) error {
+	s.storage[toKey] = s.storage[fromKey]
+	return nil
 }
 
 func (s *InMemoryBackend) DeleteFile(key string) error {

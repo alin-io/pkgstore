@@ -15,12 +15,12 @@ type npmUploadRequestBody struct {
 		Data        string `json:"data"`
 		Length      int    `json:"length"`
 	} `json:"_attachments"`
-	Id          string                        `json:"_id"`
-	Description string                        `json:"description"`
-	Name        string                        `json:"name"`
-	Readme      string                        `json:"readme"`
-	DistTags    map[string]string             `json:"dist-tags"`
-	Versions    map[string]npmPackageMetadata `json:"versions"`
+	Id          string                     `json:"_id"`
+	Description string                     `json:"description"`
+	Name        string                     `json:"name"`
+	Readme      string                     `json:"readme"`
+	DistTags    map[string]string          `json:"dist-tags"`
+	Versions    map[string]PackageMetadata `json:"versions"`
 }
 
 func (s *Service) UploadHandler(c *gin.Context) {
@@ -48,9 +48,9 @@ func (s *Service) UploadHandler(c *gin.Context) {
 	}
 
 	currentVersion := ""
-	var pkgVersion models.PackageVersion[npmPackageMetadata]
+	var pkgVersion models.PackageVersion[PackageMetadata]
 
-	pkg := models.Package[npmPackageMetadata]{}
+	pkg := models.Package[PackageMetadata]{}
 	err = pkg.FillByName(requestBody.Name, s.Prefix)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to check the DB for package"})
@@ -64,7 +64,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 			return
 		}
 	} else {
-		pkg = models.Package[npmPackageMetadata]{
+		pkg = models.Package[PackageMetadata]{
 			Name:      requestBody.Name,
 			Service:   s.Prefix,
 			Namespace: "",
@@ -76,10 +76,10 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		for _, versionInfo := range requestBody.Versions {
 			currentVersion = versionInfo.Version
 
-			pkgVersion = models.PackageVersion[npmPackageMetadata]{
+			pkgVersion = models.PackageVersion[PackageMetadata]{
 				Version:  currentVersion,
 				Digest:   checksum,
-				Metadata: datatypes.NewJSONType[npmPackageMetadata](versionInfo),
+				Metadata: datatypes.NewJSONType[PackageMetadata](versionInfo),
 				Size:     uint64(len(decodedBytes)),
 			}
 
@@ -100,7 +100,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 	}
 
 	if pkg.Id == 0 {
-		pkg.Versions = []models.PackageVersion[npmPackageMetadata]{pkgVersion}
+		pkg.Versions = []models.PackageVersion[PackageMetadata]{pkgVersion}
 		err = pkg.Insert()
 	} else if len(pkgVersion.Digest) == 0 {
 		err = pkg.InsertVersion(pkgVersion)
@@ -118,7 +118,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 	c.JSON(200, MetadataResponse{
 		Name:     pkg.Name,
 		DistTags: requestBody.DistTags,
-		Versions: map[string]npmPackageMetadata{
+		Versions: map[string]PackageMetadata{
 			pkgVersion.Version: pkgVersion.Metadata.Data(),
 		},
 	})
