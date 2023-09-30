@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"github.com/alin-io/pkgproxy/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"log"
 )
@@ -65,10 +66,9 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		}
 	} else {
 		pkg = models.Package[PackageMetadata]{
-			Name:      requestBody.Name,
-			Service:   s.Prefix,
-			Namespace: "",
-			AuthId:    c.GetString("token"),
+			Name:    requestBody.Name,
+			Service: s.Prefix,
+			AuthId:  c.GetString("token"),
 		}
 	}
 
@@ -79,8 +79,8 @@ func (s *Service) UploadHandler(c *gin.Context) {
 			pkgVersion = models.PackageVersion[PackageMetadata]{
 				Version:  currentVersion,
 				Digest:   checksum,
+				Service:  s.Prefix,
 				Metadata: datatypes.NewJSONType[PackageMetadata](versionInfo),
-				Size:     uint64(len(decodedBytes)),
 			}
 
 			for tagName, tagVersion := range requestBody.DistTags {
@@ -93,11 +93,20 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		}
 	}
 
-	err = s.Storage.WriteFile(s.PackageFilename(checksum, ""), nil, bytes.NewReader(decodedBytes))
+	err = s.Storage.WriteFile(s.PackageFilename(checksum), nil, bytes.NewReader(decodedBytes))
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to Upload Package"})
 		return
 	}
+
+	asset := models.Asset{
+		Size:        uint64(len(decodedBytes)),
+		Digest:      checksum,
+		UploadUUID:  uuid.NewString(),
+		UploadRange: "0-" + string(len(decodedBytes)),
+	}
+
+	_ = asset.Insert()
 
 	if pkg.Id == 0 {
 		pkg.Versions = []models.PackageVersion[PackageMetadata]{pkgVersion}
@@ -108,7 +117,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 
 	if err != nil {
 		log.Println("Unable to create package in DB: ", err)
-		err = s.Storage.DeleteFile(s.PackageFilename(checksum, ""))
+		err = s.Storage.DeleteFile(s.PackageFilename(checksum))
 		if err != nil {
 			log.Println("Unable to delete package from storage: ", err)
 		}

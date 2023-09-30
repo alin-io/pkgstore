@@ -9,41 +9,63 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
 	"io"
+	"log"
+	"strings"
 )
 
 // StartLayerUploadHandler POST /v2/<name>/blobs/uploads/
 func (s *Service) StartLayerUploadHandler(c *gin.Context) {
 	pkgName := s.ConstructFullPkgName(c)
-	uploadItem := models.TmpUploadStore{Name: pkgName, UploadRange: "0-0"}
-	err := uploadItem.Insert()
+	asset := models.Asset{}
+	err := asset.StartUpload()
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to Start the upload process"})
 		return
 	}
 
-	c.Header("Location", "/v2/"+pkgName+"/blobs/uploads/"+uploadItem.Id)
-	c.Header("Docker-Upload-UUID", uploadItem.Id)
-	c.Header("Range", "bytes="+uploadItem.UploadRange)
+	c.Header("Location", "/v2/"+pkgName+"/blobs/uploads/"+asset.UploadUUID)
+	c.Header("Docker-Upload-UUID", asset.UploadUUID)
+	c.Header("Range", "bytes="+asset.UploadRange)
 	c.Header("Content-Length", "0")
 	c.Status(202)
+	c.Done()
+}
+
+func (s *Service) CheckBlobExistenceHandler(c *gin.Context) {
+	digest := strings.Replace(c.Param("sha256"), "sha256:", "", 1)
+	asset := models.Asset{}
+	err := asset.FillByDigest(digest)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Unable to check the DB for package version"})
+		return
+	}
+
+	if asset.Id == 0 {
+		c.JSON(404, gin.H{"error": "Blob not found"})
+		return
+	}
+
+	c.Header("Docker-Content-Digest", "sha256:"+digest)
+	c.Header("Content-Length", fmt.Sprintf("%d", asset.Size))
+	c.Status(200)
 	c.Done()
 }
 
 func (s *Service) GetUploadProgressHandler(c *gin.Context) {
 	pkgName := s.ConstructFullPkgName(c)
 	uploadUUID := c.Param("uuid")
-	uploadItem := models.TmpUploadStore{}
-	err := uploadItem.FillById(uploadUUID)
+	asset := models.Asset{}
+	err := asset.FillByUploadUUID(uploadUUID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to get upload progress"})
 		return
 	}
-	if uploadItem.Name != pkgName || uploadItem.Id != uploadUUID {
+	if asset.UploadUUID != uploadUUID {
 		c.JSON(404, gin.H{"error": "Upload not found"})
 		return
 	}
 
-	c.Header("Range", "bytes="+uploadItem.UploadRange)
+	c.Header("Range", asset.UploadRange)
 	c.Header("Location", "/v2/"+pkgName+"/blobs/uploads/"+uploadUUID)
 	c.Header("Docker-Upload-UUID", uploadUUID)
 	c.Status(204)
@@ -53,48 +75,52 @@ func (s *Service) GetUploadProgressHandler(c *gin.Context) {
 func (s *Service) ChunkUploadHandler(c *gin.Context) {
 	pkgName := s.ConstructFullPkgName(c)
 	uploadUUID := c.Param("uuid")
-	uploadItem := models.TmpUploadStore{}
-	err := uploadItem.FillById(uploadUUID)
+	asset := models.Asset{}
+	err := asset.FillByUploadUUID(uploadUUID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to get upload progress"})
 		return
 	}
-	if uploadItem.Name != pkgName || uploadItem.Id != uploadUUID {
+	if asset.UploadUUID != uploadUUID {
 		c.JSON(404, gin.H{"error": "Upload not found"})
 		return
 	}
 
-	_, _, err = s.appendStorageData(uploadUUID, c.Request.Body)
+	_, chunkSize, err := s.appendStorageData(uploadUUID, c.Request.Body)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to save chunk"})
 		return
 	}
 
-	uploadItem.UploadRange = c.GetHeader("Content-Range")
-	err = uploadItem.Update()
+	if chunkSize > 0 {
+		asset.UploadRange = fmt.Sprintf("%d-%d", asset.Size, chunkSize)
+		asset.Size = chunkSize
+	}
+	err = asset.Update()
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to save chunk metadata"})
 		return
 	}
 
-	c.Header("Location", "/v2/"+pkgName+"/blobs/uploads/"+uploadItem.Id)
-	c.Header("Docker-Upload-UUID", uploadItem.Id)
-	c.Header("Range", "bytes="+uploadItem.UploadRange)
+	c.Header("Location", "/v2/"+pkgName+"/blobs/uploads/"+uploadUUID)
+	c.Header("Docker-Upload-UUID", uploadUUID)
+	c.Header("Range", asset.UploadRange)
 	c.Header("Content-Length", "0")
-	c.Status(202)
+	c.Status(204)
+	c.Done()
 }
 
 func (s *Service) UploadHandler(c *gin.Context) {
 	pkgName := s.ConstructFullPkgName(c)
-	inputDigest := c.Query("digest")
+	inputDigest := strings.Replace(c.Query("digest"), "sha256:", "", 1)
 	uploadUUID := c.Param("uuid")
-	uploadItem := models.TmpUploadStore{}
-	err := uploadItem.FillById(uploadUUID)
+	asset := models.Asset{}
+	err := asset.FillByUploadUUID(uploadUUID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to get upload progress"})
 		return
 	}
-	if uploadItem.Name != pkgName || uploadItem.Id != uploadUUID {
+	if asset.UploadUUID != uploadUUID {
 		c.JSON(404, gin.H{"error": "Upload not found"})
 		return
 	}
@@ -110,100 +136,149 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		return
 	}
 
-	uploadItem.Digest = digest
-	uploadItem.Size = totalSize
-	err = uploadItem.Update()
+	err = s.Storage.CopyFile(fmt.Sprintf("%s/%s", s.Prefix, uploadUUID), fmt.Sprintf("%s/%s", s.Prefix, digest))
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Unable to store the file"})
+		return
+	}
+
+	asset.Digest = digest
+	asset.Size = totalSize
+	err = asset.Update()
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to save chunk metadata"})
 		return
 	}
 
+	err = s.Storage.DeleteFile(fmt.Sprintf("%s/%s", s.Prefix, uploadUUID))
+	if err != nil {
+		log.Println(err)
+	}
+
 	c.Header("Location", "/v2/"+pkgName+"/blobs/"+digest)
+	c.Header("Content-Range", "0-"+fmt.Sprintf("%d", totalSize))
 	c.Header("Content-Length", "0")
-	c.Header("Docker-Content-Digest", digest)
-	c.Status(201)
+	c.Header("Docker-Content-Digest", "sha256:"+digest)
+	c.Status(204)
 	c.Done()
 }
 
 func (s *Service) ManifestUploadHandler(c *gin.Context) {
-	metadata := PackageMetadata{}
-	err := c.ShouldBind(&metadata)
-	if err != nil {
+	metadata := PackageMetadata{
+		ContentType: c.Request.Header.Get("Content-Type"),
+	}
+	var (
+		tagName = c.Param("reference")
+		pkgName = s.ConstructFullPkgName(c)
+		digest  string
+		err     error
+	)
+	switch metadata.ContentType {
+	case ManifestV1ContentType:
+		err = c.ShouldBindJSON(&metadata.ManifestV1)
+		tagName = metadata.ManifestV1.Tag
+		pkgName = metadata.ManifestV1.Name
+		if len(metadata.ManifestV1.FsLayers) == 0 {
+			c.JSON(400, gin.H{"error": "Bad Request: No layers found"})
+			return
+		}
+		digest = metadata.ManifestV1.FsLayers[len(metadata.ManifestV1.FsLayers)-1].BlobSum
+	case ManifestV2ContentType:
+		err = c.ShouldBindJSON(&metadata.ManifestV2)
+		digest = metadata.ManifestV2.Config.Digest
+	case ManifestListV2ContentType:
+		err = c.ShouldBindJSON(&metadata.ManifestListV2)
+	default:
 		c.JSON(400, gin.H{"error": "Bad Request"})
-		return
 	}
 
-	if len(metadata.FsLayers) == 0 {
-		c.JSON(400, gin.H{"error": "Bad Request: No layers found"})
-		return
-	}
-	tagLayer := metadata.FsLayers[len(metadata.FsLayers)-1]
-	if tagLayer.BlobSum == "" {
-		c.JSON(400, gin.H{"error": "Bad Request: No tag layer found"})
-		return
-	}
+	digest = strings.Replace(digest, "sha256:", "", 1)
 
-	uploadItem := models.TmpUploadStore{}
-	err = uploadItem.FillByDigest(tagLayer.BlobSum, metadata.Name)
+	asset := models.Asset{}
+	err = asset.FillByDigest(digest)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to get upload progress"})
 		return
 	}
+	if asset.Digest != digest {
+		c.JSON(404, gin.H{"error": "Uploaded asset not found"})
+		return
+	}
 
 	pkg := models.Package[PackageMetadata]{}
-	err = pkg.FillByName(metadata.Name, s.Prefix)
+	err = pkg.FillByName(pkgName, s.Prefix)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to check the DB for package"})
 		return
 	}
-	pkgVersion := models.PackageVersion[PackageMetadata]{
-		Version:  metadata.Tag,
-		Digest:   tagLayer.BlobSum,
-		Metadata: datatypes.NewJSONType[PackageMetadata](metadata),
-		Size:     uploadItem.Size,
-		Tag:      metadata.Tag,
-	}
+
 	if pkg.Id == 0 {
 		pkg = models.Package[PackageMetadata]{
-			Name:      metadata.Name,
-			Service:   s.Prefix,
-			Namespace: "",
-			AuthId:    c.GetString("token"),
-			Versions: []models.PackageVersion[PackageMetadata]{
-				pkgVersion,
-			},
+			Name:    pkgName,
+			Service: s.Prefix,
+			AuthId:  c.GetString("token"),
 		}
 		err = pkg.Insert()
 		if err != nil {
-			c.JSON(500, gin.H{"error": "Unable to insert package"})
-			return
-		}
-	} else {
-		pkgVersion.PackageId = pkg.Id
-		err = pkgVersion.SaveMeta()
-		if err != nil {
-			c.JSON(500, gin.H{"error": "Unable to insert package version"})
-			return
+			log.Println(err)
 		}
 	}
-	c.Status(202)
+
+	pkgVersion := models.PackageVersion[PackageMetadata]{}
+	err = pkgVersion.FillByDigest(digest)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Unable to check the DB for package version"})
+		return
+	}
+	if pkgVersion.Id == 0 {
+		pkgVersion = models.PackageVersion[PackageMetadata]{
+			PackageId: pkg.Id,
+			Service:   s.Prefix,
+			Digest:    digest,
+			Version:   tagName,
+			Tag:       tagName,
+			Metadata:  datatypes.NewJSONType[PackageMetadata](metadata),
+		}
+		err = pkgVersion.Save()
+	} else {
+		if pkgVersion.PackageId != pkg.Id || pkgVersion.Service != s.Prefix {
+			c.JSON(404, gin.H{"error": "Package version not found"})
+			return
+		}
+		pkgVersion.Version = tagName
+		pkgVersion.Tag = tagName
+		pkgVersion.Metadata = datatypes.NewJSONType[PackageMetadata](metadata)
+		err = pkgVersion.Save()
+	}
+
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Unable to insert package version"})
+		return
+	}
+
+	c.Header("Docker-Content-Digest", "sha256:"+digest)
+	c.Status(201)
 	c.Done()
+}
+
+type sizeHandler struct {
+	size uint64
 }
 
 type partialReadWriter struct {
 	io.Reader
 	input     io.Reader
 	output    io.Writer
-	totalSize uint64
+	totalSize *sizeHandler
 }
 
 func (p partialReadWriter) Read(b []byte) (n int, err error) {
 	n, err = p.input.Read(b)
+	p.totalSize.size += uint64(n)
 	if err != nil {
 		return n, err
 	}
 	_, _ = p.output.Write(b[:n])
-	p.totalSize += uint64(n)
 	return n, nil
 }
 
@@ -217,11 +292,17 @@ func (s *Service) appendStorageData(uploadUUID string, input io.Reader) (digest 
 		fileReader = io.NopCloser(bytes.NewReader([]byte{}))
 	}
 
+	defer func() {
+		_ = fileReader.Close()
+	}()
+
 	hasher := sha256.New()
 
+	sh := &sizeHandler{}
 	rw := partialReadWriter{
-		input:  io.MultiReader(fileReader, input),
-		output: hasher,
+		input:     io.MultiReader(fileReader, input),
+		output:    hasher,
+		totalSize: sh,
 	}
 
 	err = s.Storage.WriteFile(fmt.Sprintf("%s/%s", s.Prefix, uploadUUID), nil, rw)
@@ -229,5 +310,5 @@ func (s *Service) appendStorageData(uploadUUID string, input io.Reader) (digest 
 		return "", 0, err
 	}
 
-	return hex.EncodeToString(hasher.Sum(nil)), rw.totalSize, nil
+	return hex.EncodeToString(hasher.Sum(nil)), sh.size, nil
 }

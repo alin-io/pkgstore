@@ -35,7 +35,20 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		return
 	}
 
-	fileData, err := s.Storage.GetFile(s.PackageFilename(versionInfo.Digest, ""))
+	assets, err := versionInfo.Assets()
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Error while trying to get package info"})
+		return
+	}
+
+	if len(assets) == 0 {
+		c.JSON(404, gin.H{"error": "Not Found"})
+		return
+	}
+
+	fileAsset := assets[0]
+
+	fileData, err := s.Storage.GetFile(s.PackageFilename(fileAsset.Digest))
 	if err != nil {
 		c.JSON(404, gin.H{"error": "Not Found"})
 		return
@@ -48,7 +61,7 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		}
 	}(fileData)
 
-	c.DataFromReader(200, int64(versionInfo.Size), "application/octet-stream", fileData, map[string]string{
+	c.DataFromReader(200, int64(fileAsset.Size), "application/octet-stream", fileData, map[string]string{
 		"Content-Disposition": "attachment; filename=" + filename,
 	})
 }

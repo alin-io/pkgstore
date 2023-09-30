@@ -8,11 +8,15 @@ import (
 
 func initContainerRoutes(r *gin.Engine, storageBackend storage.BaseStorageBackend) {
 	containerService := container.NewService(storageBackend)
-	containerRoutes := r.Group("/container/v2")
+	containerRoutes := r.Group("/v2")
 	{
+		containerRoutes.GET("/", func(context *gin.Context) {
+			context.JSON(200, gin.H{"status": "ok"})
+		})
 		// Upload Process
 		containerRoutes.GET(":name/blobs/uploads/:uuid", containerService.GetUploadProgressHandler)
-		containerRoutes.POST(":name/blobs/uploads", containerService.StartLayerUploadHandler)
+		containerRoutes.HEAD(":name/blobs/:sha256", containerService.CheckBlobExistenceHandler)
+		containerRoutes.POST(":name/blobs/uploads/", containerService.StartLayerUploadHandler)
 		containerRoutes.PATCH(":name/blobs/uploads/:uuid", containerService.ChunkUploadHandler)
 		containerRoutes.PUT(":name/blobs/uploads/:uuid", containerService.UploadHandler)
 		containerRoutes.PUT(":name/manifests/:reference", containerService.ManifestUploadHandler)

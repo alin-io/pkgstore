@@ -15,7 +15,7 @@ import (
 )
 
 type PackageService interface {
-	PackageFilename(digest, postfix string) string
+	PackageFilename(digest string) string
 	PkgVersionFromFilename(filename string) (pkgName string, version string)
 	ConstructFullPkgName(c *gin.Context) (pkgName string)
 
@@ -34,11 +34,8 @@ type BasePackageService struct {
 	PublicRegistryPathPrefix string
 }
 
-func (s *BasePackageService) PackageFilename(digest, postfix string) string {
-	if len(postfix) == 0 {
-		postfix = ".tar.gz"
-	}
-	return fmt.Sprintf("%s/%s%s", s.Prefix, digest, postfix)
+func (s *BasePackageService) PackageFilename(digest string) string {
+	return fmt.Sprintf("%s/%s", s.Prefix, digest)
 }
 
 func (s *BasePackageService) PkgVersionFromFilename(filename string) (pkgName string, version string) {

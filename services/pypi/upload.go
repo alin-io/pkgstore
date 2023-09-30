@@ -3,6 +3,7 @@ package pypi
 import (
 	"github.com/alin-io/pkgproxy/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"io"
 	"log"
@@ -41,8 +42,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Unable to Upload Package"})
 		return
 	}
-	filenamePostfix := s.FilenamePostfix(file.Filename, pkgName, pkgVersionName)
-	storageFilename := s.PackageFilename(checksum, filenamePostfix)
+	storageFilename := s.PackageFilename(checksum)
 
 	packageModel := models.Package[PackageMetadata]{}
 	pkgVersion := models.PackageVersion[PackageMetadata]{}
@@ -57,6 +57,20 @@ func (s *Service) UploadHandler(c *gin.Context) {
 	}
 
 	err = s.Storage.WriteFile(storageFilename, nil, fileHandle)
+	if err != nil {
+		log.Println("Unable to write package to storage: ", err)
+		c.JSON(500, gin.H{"error": "Unable to Upload Package"})
+		return
+	}
+
+	asset := models.Asset{
+		Size:        uint64(size),
+		Digest:      checksum,
+		UploadUUID:  uuid.NewString(),
+		UploadRange: "0-" + string(size),
+	}
+
+	_ = asset.Insert()
 
 	if packageModel.Id > 0 && len(pkgVersion.Digest) > 0 {
 		if slices.Contains(pkgVersion.Metadata.Data().OriginalFiles, file.Filename) {
@@ -73,9 +87,9 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		}
 	} else {
 		pkgVersion = models.PackageVersion[PackageMetadata]{
+			Service: s.Prefix,
 			Digest:  checksum,
 			Version: pkgVersionName,
-			Size:    uint64(size),
 			Metadata: datatypes.NewJSONType(PackageMetadata{
 				RequiresPython: c.PostForm("requires_python"),
 				OriginalFiles:  []string{file.Filename},
@@ -83,10 +97,9 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		}
 
 		packageModel = models.Package[PackageMetadata]{
-			Name:      pkgName,
-			Service:   s.Prefix,
-			Namespace: "",
-			AuthId:    c.GetString("token"),
+			Name:    pkgName,
+			Service: s.Prefix,
+			AuthId:  c.GetString("token"),
 			Versions: []models.PackageVersion[PackageMetadata]{
 				pkgVersion,
 			},

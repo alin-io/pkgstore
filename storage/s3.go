@@ -85,7 +85,7 @@ func (s *S3Backend) GetFile(key string) (io.ReadCloser, error) {
 func (s *S3Backend) CopyFile(fromKey, toKey string) error {
 	_, err := s.s3.CopyObject(&s3.CopyObjectInput{
 		Bucket:     aws.String(s.Bucket),
-		CopySource: aws.String(fromKey),
+		CopySource: aws.String(s.Bucket + "/" + fromKey),
 		Key:        aws.String(toKey),
 	})
 	if err != nil {

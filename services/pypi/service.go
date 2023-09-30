@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/alin-io/pkgproxy/services"
 	"github.com/alin-io/pkgproxy/storage"
-	"strings"
 )
 
 type PackageMetadata struct {
@@ -32,8 +31,4 @@ func (s *Service) constructPackageOriginalFilename(name, version, postfix string
 		postfix = "-" + postfix
 	}
 	return fmt.Sprintf("%s-%s%s", name, version, postfix)
-}
-
-func (s *Service) FilenamePostfix(filename, pkgName, pkgVersionName string) (postfix string) {
-	return strings.Replace(filename, s.constructPackageOriginalFilename(pkgName, pkgVersionName, ""), "", 1)
 }
