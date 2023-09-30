@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/alin-io/pkgproxy/config"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -69,7 +70,8 @@ func (s *S3Backend) GetFile(key string) (io.ReadCloser, error) {
 	}
 	obj, err := s.s3.GetObject(getObjectInput)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
+		var aerr awserr.Error
+		if errors.As(err, &aerr) {
 			switch aerr.Code() {
 			case s3.ErrCodeNoSuchBucket:
 				return nil, nil
@@ -89,7 +91,8 @@ func (s *S3Backend) CopyFile(fromKey, toKey string) error {
 		Key:        aws.String(toKey),
 	})
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
+		var aerr awserr.Error
+		if errors.As(err, &aerr) {
 			switch aerr.Code() {
 			case s3.ErrCodeNoSuchBucket:
 				return nil
@@ -108,7 +111,8 @@ func (s *S3Backend) DeleteFile(key string) error {
 	}
 	_, err := s.s3.DeleteObject(deleteObjectInput)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
+		var aerr awserr.Error
+		if errors.As(err, &aerr) {
 			switch aerr.Code() {
 			case s3.ErrCodeNoSuchBucket:
 				return nil

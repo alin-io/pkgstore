@@ -3,6 +3,7 @@ package npm
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"github.com/alin-io/pkgproxy/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -103,7 +104,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		Size:        uint64(len(decodedBytes)),
 		Digest:      checksum,
 		UploadUUID:  uuid.NewString(),
-		UploadRange: "0-" + string(len(decodedBytes)),
+		UploadRange: fmt.Sprintf("0-%d", len(decodedBytes)),
 	}
 
 	_ = asset.Insert()
