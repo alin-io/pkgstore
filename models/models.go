@@ -1,6 +1,6 @@
 package models
 
-import "github.com/alin-io/pkgproxy/db"
+import "github.com/alin-io/pkgstore/db"
 
 func SyncModels() {
 	err := db.DB().AutoMigrate(&Package[any]{}, &PackageVersion[any]{}, Asset{})

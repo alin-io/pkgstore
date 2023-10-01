@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/alin-io/pkgproxy/config"
-	"github.com/alin-io/pkgproxy/db"
-	_ "github.com/alin-io/pkgproxy/db"
-	"github.com/alin-io/pkgproxy/models"
-	"github.com/alin-io/pkgproxy/router"
-	"github.com/alin-io/pkgproxy/storage"
+	"github.com/alin-io/pkgstore/config"
+	"github.com/alin-io/pkgstore/db"
+	_ "github.com/alin-io/pkgstore/db"
+	"github.com/alin-io/pkgstore/models"
+	"github.com/alin-io/pkgstore/router"
+	"github.com/alin-io/pkgstore/storage"
 )
 
 func main() {

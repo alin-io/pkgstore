@@ -2,8 +2,8 @@ package pypi
 
 import (
 	"fmt"
-	"github.com/alin-io/pkgproxy/services"
-	"github.com/alin-io/pkgproxy/storage"
+	"github.com/alin-io/pkgstore/services"
+	"github.com/alin-io/pkgstore/storage"
 )
 
 type PackageMetadata struct {

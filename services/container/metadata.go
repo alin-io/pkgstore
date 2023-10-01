@@ -2,7 +2,7 @@ package container
 
 import (
 	"fmt"
-	"github.com/alin-io/pkgproxy/models"
+	"github.com/alin-io/pkgstore/models"
 	"github.com/gin-gonic/gin"
 )
 

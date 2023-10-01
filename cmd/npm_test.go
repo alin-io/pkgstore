@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/alin-io/pkgproxy/services/npm"
+	"github.com/alin-io/pkgstore/services/npm"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"net/http"

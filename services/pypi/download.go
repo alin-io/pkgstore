@@ -1,7 +1,7 @@
 package pypi
 
 import (
-	"github.com/alin-io/pkgproxy/models"
+	"github.com/alin-io/pkgstore/models"
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"

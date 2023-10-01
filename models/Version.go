@@ -2,7 +2,7 @@ package models
 
 import (
 	"errors"
-	"github.com/alin-io/pkgproxy/db"
+	"github.com/alin-io/pkgstore/db"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"regexp"

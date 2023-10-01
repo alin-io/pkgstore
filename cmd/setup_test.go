@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"github.com/alin-io/pkgproxy/db"
-	"github.com/alin-io/pkgproxy/models"
-	"github.com/alin-io/pkgproxy/router"
-	"github.com/alin-io/pkgproxy/services/npm"
-	"github.com/alin-io/pkgproxy/storage"
+	"github.com/alin-io/pkgstore/db"
+	"github.com/alin-io/pkgstore/models"
+	"github.com/alin-io/pkgstore/router"
+	"github.com/alin-io/pkgstore/services/npm"
+	"github.com/alin-io/pkgstore/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"net/http"

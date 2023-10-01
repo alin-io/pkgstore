@@ -25,7 +25,7 @@ func init() {
 
 	// S3 Storage Config
 	projectConfig.Storage.S3.Region = getEnv("S3_REGION", "us-east-1")
-	projectConfig.Storage.S3.Bucket = getEnv("S3_BUCKET", "pkgproxy")
+	projectConfig.Storage.S3.Bucket = getEnv("S3_BUCKET", "pkgstore")
 	projectConfig.Storage.S3.ApiKey = getEnv("S3_API_KEY", "minioadmin")
 	projectConfig.Storage.S3.ApiSecret = getEnv("S3_API_SECRET", "minioadmin")
 	projectConfig.Storage.S3.ApiHost = getEnv("S3_API_HOST", "")

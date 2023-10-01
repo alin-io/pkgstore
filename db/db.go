@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/alin-io/pkgproxy/config"
+	"github.com/alin-io/pkgstore/config"
 	"github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

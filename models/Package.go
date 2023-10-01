@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/alin-io/pkgproxy/db"
+	"github.com/alin-io/pkgstore/db"
 	"gorm.io/gorm"
 )
 

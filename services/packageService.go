@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/alin-io/pkgproxy/storage"
+	"github.com/alin-io/pkgstore/storage"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"

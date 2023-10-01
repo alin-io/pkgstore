@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/alin-io/pkgproxy/db"
+	"github.com/alin-io/pkgstore/db"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )

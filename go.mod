@@ -1,4 +1,4 @@
-module github.com/alin-io/pkgproxy
+module github.com/alin-io/pkgstore
 
 go 1.21
 

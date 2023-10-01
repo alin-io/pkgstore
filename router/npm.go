@@ -1,8 +1,8 @@
 package router
 
 import (
-	"github.com/alin-io/pkgproxy/services/npm"
-	"github.com/alin-io/pkgproxy/storage"
+	"github.com/alin-io/pkgstore/services/npm"
+	"github.com/alin-io/pkgstore/storage"
 	"github.com/gin-gonic/gin"
 )
 
