@@ -20,5 +20,9 @@ func initContainerRoutes(r *gin.Engine, storageBackend storage.BaseStorageBacken
 		containerRoutes.PATCH(":name/blobs/uploads/:uuid", containerService.ChunkUploadHandler)
 		containerRoutes.PUT(":name/blobs/uploads/:uuid", containerService.UploadHandler)
 		containerRoutes.PUT(":name/manifests/:reference", containerService.ManifestUploadHandler)
+
+		// Download Process
+		containerRoutes.GET(":name/manifests/:reference", containerService.MetadataHandler)
+		containerRoutes.HEAD(":name/manifests/:reference", containerService.CheckMetadataHandler)
 	}
 }
