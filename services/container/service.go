@@ -7,17 +7,18 @@ import (
 	"regexp"
 )
 
+const (
+	ManifestV1ContentType         = "application/vnd.docker.distribution.manifest.v1+json"
+	ManifestV2ContentType         = "application/vnd.docker.distribution.manifest.v2+json"
+	ManifestListV2ContentType     = "application/vnd.docker.distribution.manifest.list.v2+json"
+	ManifestOCIV1ContentType      = "application/vnd.oci.image.manifest.v1+json"
+	ManifestOCIIndexV1ContentType = "application/vnd.oci.image.index.v1+json"
+)
+
 type PackageMetadata struct {
-	ContentType string `json:"contentType"`
-
-	// Content Type - application/vnd.docker.distribution.manifest.v1+json
-	ManifestV1 ManifestV1 `json:"manifestV1,omitempty"`
-
-	// Content Type - application/vnd.docker.distribution.manifest.v2+json
-	ManifestV2 ManifestV2 `json:"manifestV2,omitempty"`
-
-	// Content Type - application/vnd.docker.distribution.manifest.list.v2+json
-	ManifestListV2 ManifestListV2 `json:"manifestListV2,omitempty"`
+	ContentType    string `json:"contentType"`
+	Digest         string `json:"digest"`
+	MetadataBuffer []byte `json:"metadataBuffer"`
 }
 
 type Service struct {
@@ -58,67 +59,73 @@ func (s *Service) PkgInfoFromRequest(c *gin.Context) (pkgName string, filename s
 	return pkgName, filename
 }
 
-const (
-	ManifestV1ContentType     = "application/vnd.docker.distribution.manifest.v1+json"
-	ManifestV2ContentType     = "application/vnd.docker.distribution.manifest.v2+json"
-	ManifestListV2ContentType = "application/vnd.docker.distribution.manifest.list.v2+json"
-)
-
 type ManifestV1 struct {
-	Name     string `json:"name"`
-	Tag      string `json:"tag"`
+	Name     string `json:"name,omitempty"`
+	Tag      string `json:"tag,omitempty"`
 	FsLayers []struct {
-		BlobSum string `json:"blobSum"`
-	} `json:"fsLayers"`
+		BlobSum string `json:"blobSum,omitempty"`
+	} `json:"fsLayers,omitempty"`
 	History []struct {
-		V1Compatibility string `json:"v1Compatibility"`
-	} `json:"history"`
-	SchemaVersion int `json:"schemaVersion"`
+		V1Compatibility string `json:"v1Compatibility,omitempty"`
+	} `json:"history,omitempty"`
+	SchemaVersion int `json:"schemaVersion,omitempty"`
 	Signatures    []struct {
 		Header struct {
 			Jwk struct {
-				Crv string `json:"crv"`
-				Kid string `json:"kid"`
-				Kty string `json:"kty"`
-				X   string `json:"x"`
-				Y   string `json:"y"`
+				Crv string `json:"crv,omitempty"`
+				Kid string `json:"kid,omitempty"`
+				Kty string `json:"kty,omitempty"`
+				X   string `json:"x,omitempty"`
+				Y   string `json:"y,omitempty"`
 			} `json:"jwk"`
-			Alg string `json:"alg"`
-		} `json:"header"`
-		Signature string `json:"signature"`
-		Protected string `json:"protected"`
-	} `json:"signatures"`
+			Alg string `json:"alg,omitempty"`
+		} `json:"header,omitempty"`
+		Signature string `json:"signature,omitempty"`
+		Protected string `json:"protected,omitempty"`
+	} `json:"signatures,omitempty"`
 }
 
 type ManifestListV2 struct {
 	SchemaVersion int    `json:"schemaVersion"`
 	MediaType     string `json:"mediaType"` // application/vnd.docker.distribution.manifest.list.v2+json
+	ArtifactType  string `json:"artifactType,omitempty"`
 	Manifests     []struct {
 		MediaType string `json:"mediaType"` // application/vnd.docker.distribution.manifest.v2+json
 		Size      int    `json:"size"`
 		Digest    string `json:"digest"`
 		Platform  struct {
-			Architecture string   `json:"architecture"`
-			Os           string   `json:"os"`
-			OsVersion    string   `json:"os.version"`
-			OsFeatures   []string `json:"os.features"`
-			Variant      string   `json:"variant"`
-			Features     []string `json:"features"`
-		} `json:"platform"`
-	} `json:"manifests"`
+			Architecture string   `json:"architecture,omitempty"`
+			Os           string   `json:"os,omitempty"`
+			OsVersion    string   `json:"os.version,omitempty"`
+			OsFeatures   []string `json:"os.features,omitempty"`
+			Variant      string   `json:"variant,omitempty"`
+			Features     []string `json:"features,omitempty"`
+		} `json:"platform,omitempty"`
+	} `json:"manifests,omitempty"`
+	Subject struct {
+		MediaType    string            `json:"mediaType,omitempty"`
+		Size         int               `json:"size,omitempty"`
+		Digest       string            `json:"digest,omitempty"`
+		Urls         []string          `json:"urls,omitempty"`
+		Annotations  map[string]string `json:"annotations,omitempty"`
+		Data         string            `json:"data,omitempty"`
+		ArtifactType string            `json:"artifactType,omitempty"`
+	} `json:"subject,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 type ManifestV2 struct {
-	SchemaVersion int    `json:"schemaVersion"`
-	MediaType     string `json:"mediaType"` // application/vnd.docker.distribution.manifest.v2+json
+	SchemaVersion int    `json:"schemaVersion,omitempty"`
+	MediaType     string `json:"mediaType,omitempty"`
 	Config        struct {
-		MediaType string `json:"mediaType"` // application/vnd.docker.distribution.manifest.v2+json
-		Size      int    `json:"size"`
-		Digest    string `json:"digest"`
+		MediaType string `json:"mediaType,omitempty"`
+		Size      int    `json:"size,omitempty"`
+		Digest    string `json:"digest,omitempty"`
 	} `json:"config"`
 	Layers []struct {
-		MediaType string `json:"mediaType"`
-		Size      int    `json:"size"`
-		Digest    string `json:"digest"`
+		MediaType   string            `json:"mediaType,omitempty"`
+		Size        int               `json:"size,omitempty"`
+		Digest      string            `json:"digest,omitempty"`
+		Annotations map[string]string `json:"annotations,omitempty"`
 	} `json:"layers"`
 }

@@ -22,16 +22,6 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "Package not found"})
 		return
 	}
-	pkgVersion := models.PackageVersion[PackageMetadata]{}
-	err = pkgVersion.FillByDigest(digest)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "Error while trying to get package info"})
-		return
-	}
-	if pkgVersion.Id < 1 {
-		c.JSON(404, gin.H{"error": "Package version not found"})
-		return
-	}
 
 	asset := models.Asset{}
 	err = asset.FillByDigest(digest)
@@ -45,7 +35,7 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 	}
 
 	fileData, err := s.Storage.GetFile(s.PackageFilename(asset.Digest))
-	if err != nil {
+	if err != nil || fileData == nil {
 		c.JSON(404, gin.H{"error": "Not Found"})
 		return
 	}

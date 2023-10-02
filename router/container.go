@@ -24,6 +24,6 @@ func initContainerRoutes(r *gin.Engine, storageBackend storage.BaseStorageBacken
 		// Download Process
 		containerRoutes.GET(":name/manifests/:reference", containerService.MetadataHandler)
 		containerRoutes.HEAD(":name/manifests/:reference", containerService.CheckMetadataHandler)
-		containerRoutes.GET(":name/blob/:sha256", containerService.DownloadHandler)
+		containerRoutes.GET(":name/blobs/:sha256", containerService.DownloadHandler)
 	}
 }

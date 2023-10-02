@@ -5,6 +5,7 @@ import (
 	"github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"strings"
 )
 
@@ -22,7 +23,9 @@ func InitDatabase() {
 		dialector = sqlite.Open(config.Get().DatabaseUrl)
 	}
 
-	client, err = gorm.Open(dialector, &gorm.Config{})
+	client, err = gorm.Open(dialector, &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		panic(err)
 	}

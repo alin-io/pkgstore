@@ -1,9 +1,9 @@
 package container
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/alin-io/pkgstore/models"
 	"github.com/gin-gonic/gin"
@@ -136,7 +136,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		return
 	}
 
-	err = s.Storage.CopyFile(fmt.Sprintf("%s/%s", s.Prefix, uploadUUID), fmt.Sprintf("%s/%s", s.Prefix, digest))
+	err = s.Storage.CopyFile(s.PackageFilename(uploadUUID), s.PackageFilename(digest))
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to store the file"})
 		return
@@ -150,7 +150,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		return
 	}
 
-	err = s.Storage.DeleteFile(fmt.Sprintf("%s/%s", s.Prefix, uploadUUID))
+	err = s.Storage.DeleteFile(s.PackageFilename(uploadUUID))
 	if err != nil {
 		log.Println(err)
 	}
@@ -164,44 +164,59 @@ func (s *Service) UploadHandler(c *gin.Context) {
 }
 
 func (s *Service) ManifestUploadHandler(c *gin.Context) {
-	metadata := PackageMetadata{
-		ContentType: c.Request.Header.Get("Content-Type"),
-	}
 	var (
-		tagName = c.Param("reference")
+		tagName = strings.Replace(c.Param("reference"), "sha256:", "", 1)
 		pkgName = s.ConstructFullPkgName(c)
-		digest  string
 		err     error
 	)
+
+	metadataBody, _ := io.ReadAll(c.Request.Body)
+
+	hasher := sha256.New()
+	_, _ = hasher.Write(metadataBody)
+	digest := hex.EncodeToString(hasher.Sum(nil))
+
+	metadata := PackageMetadata{
+		ContentType:    c.Request.Header.Get("Content-Type"),
+		MetadataBuffer: metadataBody,
+		Digest:         digest,
+	}
+
 	switch metadata.ContentType {
 	case ManifestV1ContentType:
-		err = c.ShouldBindJSON(&metadata.ManifestV1)
-		tagName = metadata.ManifestV1.Tag
-		pkgName = metadata.ManifestV1.Name
-		if len(metadata.ManifestV1.FsLayers) == 0 {
+		manifest := ManifestV1{}
+		err = json.Unmarshal(metadata.MetadataBuffer, &manifest)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Bad Request: Unable tօ parse the manifest"})
+			return
+		}
+		tagName = manifest.Tag
+		pkgName = manifest.Name
+		if len(manifest.FsLayers) == 0 {
 			c.JSON(400, gin.H{"error": "Bad Request: No layers found"})
 			return
 		}
-		digest = metadata.ManifestV1.FsLayers[len(metadata.ManifestV1.FsLayers)-1].BlobSum
-	case ManifestV2ContentType:
-		err = c.ShouldBindJSON(&metadata.ManifestV2)
-		digest = metadata.ManifestV2.Config.Digest
-	case ManifestListV2ContentType:
-		err = c.ShouldBindJSON(&metadata.ManifestListV2)
+	case ManifestV2ContentType, ManifestOCIV1ContentType:
+		manifest := ManifestV2{}
+		err = json.Unmarshal(metadata.MetadataBuffer, &manifest)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Bad Request: Unable tօ parse the manifest"})
+			return
+		}
+	case ManifestListV2ContentType, ManifestOCIIndexV1ContentType:
+		manifest := ManifestListV2{}
+		err = json.Unmarshal(metadata.MetadataBuffer, &manifest)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Bad Request: Unable tօ parse the manifest"})
+			return
+		}
 	default:
 		c.JSON(400, gin.H{"error": "Bad Request"})
-	}
-
-	digest = strings.Replace(digest, "sha256:", "", 1)
-
-	asset := models.Asset{}
-	err = asset.FillByDigest(digest)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "Unable to get upload progress"})
 		return
 	}
-	if asset.Digest != digest {
-		c.JSON(404, gin.H{"error": "Uploaded asset not found"})
+
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Bad Request: Unable tօ parse the manifest"})
 		return
 	}
 
@@ -224,8 +239,7 @@ func (s *Service) ManifestUploadHandler(c *gin.Context) {
 		}
 	}
 
-	pkgVersion := models.PackageVersion[PackageMetadata]{}
-	err = pkgVersion.FillByDigest(digest)
+	pkgVersion, err := pkg.Version(tagName)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Unable to check the DB for package version"})
 		return
@@ -275,37 +289,41 @@ type partialReadWriter struct {
 func (p partialReadWriter) Read(b []byte) (n int, err error) {
 	n, err = p.input.Read(b)
 	p.totalSize.size += uint64(n)
-	if err != nil {
-		return n, err
-	}
 	_, _ = p.output.Write(b[:n])
-	return n, nil
+	return n, err
 }
 
 func (s *Service) appendStorageData(uploadUUID string, input io.Reader) (digest string, size uint64, err error) {
-	fileReader, err := s.Storage.GetFile(fmt.Sprintf("%s/%s", s.Prefix, uploadUUID))
+	fileReader, err := s.Storage.GetFile(s.PackageFilename(uploadUUID))
 	if err != nil {
 		return "", 0, err
 	}
 
+	var inputReader io.Reader
+
 	if fileReader == nil {
-		fileReader = io.NopCloser(bytes.NewReader([]byte{}))
+		inputReader = input
+	} else {
+		inputReader = io.MultiReader(fileReader, input)
 	}
 
-	defer func() {
+	defer func(fileReader io.ReadCloser) {
+		if fileReader == nil {
+			return
+		}
 		_ = fileReader.Close()
-	}()
+	}(fileReader)
 
 	hasher := sha256.New()
 
 	sh := &sizeHandler{}
 	rw := partialReadWriter{
-		input:     io.MultiReader(fileReader, input),
+		input:     inputReader,
 		output:    hasher,
 		totalSize: sh,
 	}
 
-	err = s.Storage.WriteFile(fmt.Sprintf("%s/%s", s.Prefix, uploadUUID), nil, rw)
+	err = s.Storage.WriteFile(s.PackageFilename(uploadUUID), nil, rw)
 	if err != nil {
 		return "", 0, err
 	}

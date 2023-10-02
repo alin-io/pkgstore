@@ -35,18 +35,16 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		return
 	}
 
-	assets, err := versionInfo.Assets()
+	fileAsset, err := versionInfo.Asset()
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Error while trying to get package info"})
 		return
 	}
 
-	if len(assets) == 0 {
+	if fileAsset == nil || fileAsset.Id < 1 {
 		c.JSON(404, gin.H{"error": "Not Found"})
 		return
 	}
-
-	fileAsset := assets[0]
 
 	fileData, err := s.Storage.GetFile(s.PackageFilename(fileAsset.Digest))
 	if err != nil {

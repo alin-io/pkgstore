@@ -6,7 +6,6 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"regexp"
-	"strings"
 )
 
 var digestRegex = regexp.MustCompile(`^[a-f0-9]{64}$`)
@@ -17,7 +16,6 @@ type PackageVersion[MetaType any] struct {
 	Id      uint64 `gorm:"column:id;primaryKey;autoincrement" json:"id" binding:"required"`
 	Service string `gorm:"column:service;not null" json:"service" binding:"required"`
 
-	// Single Digest of an Asset or multiple with comma separated values - <sha256>,<sha256>,...
 	Digest string `gorm:"column:digest;index" json:"digest"`
 
 	PackageId uint64 `gorm:"column:package_id;uniqueIndex:pkg_id_version;uniqueIndex:pkg_id_tag" json:"package_id" binding:"required"`
@@ -45,7 +43,7 @@ func (p *PackageVersion[T]) FillByDigest(digest string) error {
 	if !match {
 		return errors.New("invalid digest")
 	}
-	return db.DB().Find(p, "digest LIKE ?", "%"+digest+"%").Error
+	return db.DB().Find(p, "digest = ?", digest).Error
 }
 
 func (p *PackageVersion[T]) Insert() error {
@@ -64,12 +62,11 @@ func (p *PackageVersion[T]) Delete() error {
 	return db.DB().Delete(&PackageVersion[T]{}, "id = ?", p.Id).Error
 }
 
-func (p *PackageVersion[T]) Assets() ([]Asset, error) {
-	assets := make([]Asset, 0)
+func (p *PackageVersion[T]) Asset() (*Asset, error) {
+	asset := &Asset{}
 	if len(p.Digest) == 0 {
-		return assets, nil
+		return nil, nil
 	}
-	digests := strings.Split(p.Digest, ",")
-	err := db.DB().Find(&assets, "digest IN ?", digests).Error
-	return assets, err
+	err := db.DB().Where("digest = ?", p.Digest).Find(&asset).Error
+	return asset, err
 }

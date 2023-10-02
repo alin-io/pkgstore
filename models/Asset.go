@@ -45,6 +45,10 @@ func (t *Asset) Insert() error {
 }
 
 func (t *Asset) FillByDigest(digest string) error {
+	match := digestRegex.MatchString(digest)
+	if !match {
+		return errors.New("invalid digest")
+	}
 	return db.DB().Find(t, `digest = ?`, digest).Error
 }
 
