@@ -1,8 +1,25 @@
 version: '3.4'
 services:
+  pkgstore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      LISTEN_ADDRESS: ":8080"
+      REGISTRY_HOST: "http://localhost:8080"
+      DATABASE_URL: "packages.sqlite"
+
+      S3_BUCKET: "pkgstore"
+      S3_API_HOST: "http://minio:9000"
+      S3_API_KEY: "minioadmin"
+      S3_API_SECRET: "minioadmin"
+    ports:
+      - "8080:8080"
   minio:
     image: quay.io/minio/minio:latest
     restart: always
+    entrypoint: bash -c "mkdir -p /data/pkgstore && /usr/bin/docker-entrypoint.sh $0 $@"
     command: "server /data --console-address :9090"
     ports:
       - "127.0.0.1:9090:9090"
