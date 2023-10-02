@@ -42,7 +42,7 @@ func (s *InMemoryBackend) WriteFile(key string, fileMeta interface{}, r io.Reade
 func (s *InMemoryBackend) GetFile(key string) (io.ReadCloser, error) {
 	file, ok := s.storage[key]
 	if !ok {
-		return nil, errors.New("file not found")
+		return nil, nil
 	}
 	return io.NopCloser(bytes.NewReader(file.data)), nil
 }

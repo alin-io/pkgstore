@@ -142,12 +142,20 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		return
 	}
 
-	asset.Digest = digest
-	asset.Size = totalSize
-	err = asset.Update()
+	asset2 := models.Asset{}
+	err = asset2.FillByDigest(digest)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Unable to save chunk metadata"})
+		c.JSON(500, gin.H{"error": "Unable to check the DB for package version"})
 		return
+	}
+	if asset2.Id == 0 || asset2.Digest != digest {
+		asset.Digest = digest
+		asset.Size = totalSize
+		err = asset.Update()
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Unable to save chunk metadata"})
+			return
+		}
 	}
 
 	err = s.Storage.DeleteFile(s.PackageFilename(uploadUUID))
