@@ -1,1 +1,17 @@
-GET http://localhost:8080
+GET http://localhost:8080/api/packages
+
+###
+
+GET http://localhost:8080/api/packages/1
+
+###
+
+GET http://localhost:8080/api/packages/1/versions
+
+###
+
+DELETE http://localhost:8080/api/packages/1/versions/1
+
+###
+
+DELETE http://localhost:8080/api/packages/1
