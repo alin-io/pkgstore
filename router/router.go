@@ -24,4 +24,5 @@ func PackageRouter(r *gin.Engine, storageBackend storage.BaseStorageBackend) {
 	initNpmRoutes(r, storageBackend)
 	initPypiRoutes(r, storageBackend)
 	initContainerRoutes(r, storageBackend)
+	initApiRoutes(r, storageBackend)
 }

@@ -48,7 +48,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 	packageModel := models.Package[PackageMetadata]{}
 	pkgVersion := models.PackageVersion[PackageMetadata]{}
 	_ = packageModel.FillByName(pkgName, s.Prefix)
-	if packageModel.Id > 0 {
+	if packageModel.ID > 0 {
 		pkgVersion, err = packageModel.Version(pkgVersionName)
 		if err != nil {
 			log.Println("Unable to fill package versions: ", err)
@@ -73,7 +73,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 
 	_ = asset.Insert()
 
-	if packageModel.Id > 0 && len(pkgVersion.Digest) > 0 {
+	if packageModel.ID > 0 && len(pkgVersion.Digest) > 0 {
 		if slices.Contains(pkgVersion.Metadata.Data().OriginalFiles, file.Filename) {
 			c.JSON(200, pkgVersion)
 			return

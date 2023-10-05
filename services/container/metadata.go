@@ -9,7 +9,7 @@ import (
 
 func (s *Service) MetadataHandler(c *gin.Context) {
 	_, pkgVersion := s.pkgVersionMetadata(c)
-	if pkgVersion.Id < 1 {
+	if pkgVersion.ID < 1 {
 		return
 	}
 
@@ -21,7 +21,7 @@ func (s *Service) MetadataHandler(c *gin.Context) {
 
 func (s *Service) CheckMetadataHandler(c *gin.Context) {
 	_, pkgVersion := s.pkgVersionMetadata(c)
-	if pkgVersion.Id < 1 {
+	if pkgVersion.ID < 1 {
 		return
 	}
 
@@ -43,7 +43,7 @@ func (s *Service) pkgVersionMetadata(c *gin.Context) (pkg models.Package[Package
 		c.JSON(500, gin.H{"error": "Error while trying to get package info"})
 		return
 	}
-	if pkg.Id < 1 {
+	if pkg.ID < 1 {
 		c.JSON(404, gin.H{"error": "Package not found"})
 		return
 	}
@@ -56,7 +56,7 @@ func (s *Service) pkgVersionMetadata(c *gin.Context) (pkg models.Package[Package
 		c.JSON(500, gin.H{"error": "Error while trying to get package info"})
 		return
 	}
-	if pkgVersion.Id < 1 || pkgVersion.PackageId != pkg.Id {
+	if pkgVersion.ID < 1 || pkgVersion.PackageId != pkg.ID {
 		c.JSON(404, gin.H{"error": "Package version not found"})
 		return
 	}

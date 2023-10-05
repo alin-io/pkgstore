@@ -59,7 +59,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		return
 	}
 
-	if pkg.Id > 0 {
+	if pkg.ID > 0 {
 		pkgVersion, err = pkg.Version(currentVersion)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Unable to check the DB for package version"})
@@ -109,7 +109,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 
 	_ = asset.Insert()
 
-	if pkg.Id == 0 {
+	if pkg.ID == 0 {
 		pkg.Versions = []models.PackageVersion[PackageMetadata]{pkgVersion}
 		err = pkg.Insert()
 	} else if len(pkgVersion.Digest) == 0 {

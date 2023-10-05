@@ -40,7 +40,7 @@ func (s *Service) CheckBlobExistenceHandler(c *gin.Context) {
 		return
 	}
 
-	if asset.Id == 0 {
+	if asset.ID == 0 {
 		c.JSON(404, gin.H{"error": "Blob not found"})
 		return
 	}
@@ -148,7 +148,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Unable to check the DB for package version"})
 		return
 	}
-	if asset2.Id == 0 || asset2.Digest != digest {
+	if asset2.ID == 0 || asset2.Digest != digest {
 		asset.Digest = digest
 		asset.Size = totalSize
 		err = asset.Update()
@@ -235,7 +235,7 @@ func (s *Service) ManifestUploadHandler(c *gin.Context) {
 		return
 	}
 
-	if pkg.Id == 0 {
+	if pkg.ID == 0 {
 		pkg = models.Package[PackageMetadata]{
 			Name:    pkgName,
 			Service: s.Prefix,
@@ -252,9 +252,9 @@ func (s *Service) ManifestUploadHandler(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Unable to check the DB for package version"})
 		return
 	}
-	if pkgVersion.Id == 0 {
+	if pkgVersion.ID == 0 {
 		pkgVersion = models.PackageVersion[PackageMetadata]{
-			PackageId: pkg.Id,
+			PackageId: pkg.ID,
 			Service:   s.Prefix,
 			Digest:    digest,
 			Version:   tagName,
@@ -263,7 +263,7 @@ func (s *Service) ManifestUploadHandler(c *gin.Context) {
 		}
 		err = pkgVersion.Save()
 	} else {
-		if pkgVersion.PackageId != pkg.Id || pkgVersion.Service != s.Prefix {
+		if pkgVersion.PackageId != pkg.ID || pkgVersion.Service != s.Prefix {
 			c.JSON(404, gin.H{"error": "Package version not found"})
 			return
 		}

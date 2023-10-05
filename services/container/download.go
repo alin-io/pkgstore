@@ -18,7 +18,7 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Error while trying to get package info"})
 		return
 	}
-	if pkg.Id < 1 {
+	if pkg.ID < 1 {
 		c.JSON(404, gin.H{"error": "Package not found"})
 		return
 	}

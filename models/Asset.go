@@ -8,18 +8,22 @@ import (
 	"github.com/alin-io/pkgstore/db"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Asset struct {
-	gorm.Model
+	gorm.Model `json:"-"`
 
-	Id uint64 `gorm:"column:id;primaryKey;autoincrement" json:"id" binding:"required"`
+	ID uint64 `gorm:"column:id;primaryKey;autoincrement" json:"id" binding:"required"`
 
 	Digest string `gorm:"column:digest;index,not null;uniqueIndex" json:"digest" binding:"required"`
 	Size   uint64 `gorm:"column:size;not null" json:"size" binding:"required"`
 
 	UploadUUID  string `gorm:"column:upload_uuid;uniqueIndex;not null" json:"upload_uuid" binding:"required"`
 	UploadRange string `gorm:"column:upload_range;not null" json:"upload_range" binding:"required"`
+
+	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 }
 
 func (*Asset) TableName() string {

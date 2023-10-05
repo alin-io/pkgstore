@@ -18,7 +18,7 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		return
 	}
 
-	if pkg.Id == 0 {
+	if pkg.ID == 0 {
 		c.JSON(404, gin.H{"error": "Not Found"})
 		return
 	}
@@ -40,7 +40,7 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		return
 	}
 
-	if fileAsset == nil || fileAsset.Id < 1 {
+	if fileAsset == nil || fileAsset.ID < 1 {
 		c.JSON(404, gin.H{"error": "Not Found"})
 		return
 	}
