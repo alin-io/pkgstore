@@ -24,3 +24,5 @@ go.work
 .idea/
 .vscode/
 .env
+cmd/server/ui/
+
