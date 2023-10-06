@@ -21,7 +21,7 @@ type Package[MetaType any] struct {
 	UpdatedAt     time.Time                  `gorm:"column:updated_at" json:"updated_at"`
 }
 
-func (p *Package[MetaType]) BeforeCreate(tx *gorm.DB) (err error) {
+func (p *Package[MetaType]) BeforeCreate(_ *gorm.DB) (err error) {
 	if p.ID == uuid.Nil {
 		p.ID = uuid.New()
 	}

@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/alin-io/pkgstore/db"
-	"github.com/google/uuid"
 )
 
 func SyncModels() {
@@ -10,9 +9,4 @@ func SyncModels() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func IsValidUUID(u string) bool {
-	_, err := uuid.Parse(u)
-	return err == nil
 }

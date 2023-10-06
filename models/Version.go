@@ -31,7 +31,7 @@ type PackageVersion[MetaType any] struct {
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 }
 
-func (p *PackageVersion[T]) BeforeCreate(tx *gorm.DB) (err error) {
+func (p *PackageVersion[T]) BeforeCreate(_ *gorm.DB) (err error) {
 	if p.ID == uuid.Nil {
 		p.ID = uuid.New()
 	}

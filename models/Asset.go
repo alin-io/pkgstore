@@ -26,7 +26,7 @@ type Asset struct {
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 }
 
-func (t *Asset) BeforeCreate(tx *gorm.DB) (err error) {
+func (t *Asset) BeforeCreate(_ *gorm.DB) (err error) {
 	if t.ID == uuid.Nil {
 		t.ID = uuid.New()
 	}
