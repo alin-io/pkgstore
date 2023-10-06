@@ -8,6 +8,7 @@ import (
 	"github.com/alin-io/pkgstore/models"
 	"github.com/alin-io/pkgstore/router"
 	"github.com/alin-io/pkgstore/storage"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
@@ -31,6 +32,14 @@ func main() {
 	models.SyncModels()
 
 	r := router.SetupGinServer()
+	// Setup Cors if we are in Debug mode, otherwise UI would be under the same domain name
+	if gin.Mode() == gin.DebugMode {
+		corsConfig := cors.DefaultConfig()
+		corsConfig.AllowOrigins = []string{"http://localhost:3000"}
+		corsConfig.AllowCredentials = true
+		corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization")
+		r.Use(cors.New(corsConfig))
+	}
 
 	templates := template.Must(template.New("").ParseFS(frontendFS, "ui/index.html"))
 	r.SetHTMLTemplate(templates)

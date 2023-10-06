@@ -2,11 +2,12 @@ import { PackagesEmptyState } from './PackagesEmptyState';
 import { Link } from 'react-router-dom';
 import { formatDistance } from 'date-fns';
 import ChevronRightIcon from '@heroicons/react/20/solid/ChevronRightIcon';
-import { LibConfig, PackageItem } from '.';
+import { LibConfig } from '.';
 import { ServiceIcon } from './ServiceIcon';
+import { Package } from '../api';
 
 interface Props {
-  packages: PackageItem[];
+  packages: Package[];
 }
 
 export function PackagesList({ packages }: Props) {

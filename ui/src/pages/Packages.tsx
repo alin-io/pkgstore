@@ -1,35 +1,19 @@
 import { SearchInput } from '../components/SearchInput.tsx';
 import { PackagesList } from '../components/PackageList.tsx';
+import { useGetPackages } from '../api';
+import { TopLoadingBar } from '../components/TopLoadingBar.tsx';
+import { Alert } from '../components/Alert.tsx';
 
 export function PackagesPage() {
+  const { data, error } = useGetPackages('');
+  const isLoading = !data && !error;
+
   return (
     <div className="py-0.5">
       <SearchInput updateUrl />
-      <PackagesList
-        packages={[
-          {
-            service: 'npm',
-            updated_at: new Date().toISOString(),
-            name: 'react',
-            id: 1,
-            created_at: new Date().toISOString(),
-          },
-          {
-            service: 'pypi',
-            updated_at: new Date().toISOString(),
-            name: 'requests',
-            id: 3,
-            created_at: new Date().toISOString(),
-          },
-          {
-            service: 'container',
-            updated_at: new Date().toISOString(),
-            name: 'ubuntu',
-            id: 4,
-            created_at: new Date().toISOString(),
-          },
-        ]}
-      />
+      {isLoading && <TopLoadingBar />}
+      {data && <PackagesList packages={data} />}
+      {error && <Alert title="Unable to fetch packages" message={error.message} variant="error" />}
     </div>
   );
 }

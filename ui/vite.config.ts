@@ -12,4 +12,7 @@ export default defineConfig({
     outDir: '../cmd/server/ui',
     emptyOutDir: true,
   },
+  server: {
+    port: 3000,
+  },
 });
