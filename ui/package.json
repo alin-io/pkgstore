@@ -12,6 +12,7 @@
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
+    "@tailwindcss/typography": "^0.5.10",
     "axios": "^1.5.1",
     "date-fns": "^2.30.0",
     "localforage": "^1.10.0",

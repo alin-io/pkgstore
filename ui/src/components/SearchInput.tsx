@@ -1,7 +1,7 @@
 import MagnifyingGlassIcon from '@heroicons/react/20/solid/MagnifyingGlassIcon';
 import { classNames } from '.';
 import { ChangeEvent, useEffect, useState } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 interface Props extends React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> {
   updateUrl?: boolean;
@@ -9,9 +9,7 @@ interface Props extends React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLIn
 
 export function SearchInput({ className, updateUrl, ...props }: Props) {
   const [value, setValue] = useState<string>((props.value ?? '').toString());
-  const searchParams = useSearchParams();
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     setValue((props.value ?? '').toString());
@@ -26,7 +24,7 @@ export function SearchInput({ className, updateUrl, ...props }: Props) {
       } else {
         params.delete('q');
       }
-      navigate(pathname + '?' + params.toString(), { replace: true });
+      setSearchParams(params);
     }
   };
 

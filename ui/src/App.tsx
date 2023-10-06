@@ -4,8 +4,9 @@ import { Container } from './components/Container.tsx';
 import { PackagesPage } from './pages/Packages.tsx';
 import { NavMenu, NavMenuMobile } from './components/Navbar';
 import { Button } from './components/Button.tsx';
-import PlusIcon from '@heroicons/react/20/solid/PlusIcon';
 import { NavMenuProps } from './components/Navbar/NavMenu.tsx';
+import { PackagePage } from './pages/Package.tsx';
+import { UserIcon } from '@heroicons/react/20/solid';
 
 const MenuItems: NavMenuProps['items'] = [
   {
@@ -29,7 +30,7 @@ export default function App() {
       <NavMenu
         ctaItems={
           <Link to="/">
-            <Button HeroIcon={PlusIcon}>New Package</Button>
+            <Button HeroIcon={UserIcon}>Sign In</Button>
           </Link>
         }
         items={MenuItems}
@@ -40,6 +41,7 @@ export default function App() {
         <Container>
           <Routes>
             <Route path="/" element={<PackagesPage />} />
+            <Route path="/packages/:id" element={<PackagePage />} />
           </Routes>
         </Container>
       </div>

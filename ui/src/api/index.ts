@@ -3,7 +3,8 @@ import { useFetch } from '../hooks/useFetch.ts';
 
 export * from './types';
 
-const API_URL = import.meta.env.PROD ? '/api' : 'http://localhost:8080/api';
+export const SERVER_HOST = import.meta.env.VITE_SERVER_HOST || 'http://localhost:8080';
+const API_URL = `${SERVER_HOST}/api`;
 const FetchOptions: RequestInit = {
   credentials: 'include',
   headers: {
