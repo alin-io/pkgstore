@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/alin-io/pkgstore/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"io"
 	"log"
@@ -40,7 +41,7 @@ func (s *Service) CheckBlobExistenceHandler(c *gin.Context) {
 		return
 	}
 
-	if asset.ID == 0 {
+	if asset.ID == uuid.Nil {
 		c.JSON(404, gin.H{"error": "Blob not found"})
 		return
 	}
@@ -148,7 +149,7 @@ func (s *Service) UploadHandler(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Unable to check the DB for package version"})
 		return
 	}
-	if asset2.ID == 0 || asset2.Digest != digest {
+	if asset2.ID == uuid.Nil || asset2.Digest != digest {
 		asset.Digest = digest
 		asset.Size = totalSize
 		err = asset.Update()
@@ -235,7 +236,7 @@ func (s *Service) ManifestUploadHandler(c *gin.Context) {
 		return
 	}
 
-	if pkg.ID == 0 {
+	if pkg.ID == uuid.Nil {
 		pkg = models.Package[PackageMetadata]{
 			Name:    pkgName,
 			Service: s.Prefix,
@@ -252,7 +253,7 @@ func (s *Service) ManifestUploadHandler(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Unable to check the DB for package version"})
 		return
 	}
-	if pkgVersion.ID == 0 {
+	if pkgVersion.ID == uuid.Nil {
 		pkgVersion = models.PackageVersion[PackageMetadata]{
 			PackageId: pkg.ID,
 			Service:   s.Prefix,

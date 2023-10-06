@@ -14,7 +14,7 @@ import (
 type Asset struct {
 	gorm.Model `json:"-"`
 
-	ID uint64 `gorm:"column:id;primaryKey;autoincrement" json:"id" binding:"required"`
+	ID uuid.UUID `gorm:"column:id;primaryKey;" json:"id" binding:"required"`
 
 	Digest string `gorm:"column:digest;index,not null;uniqueIndex" json:"digest" binding:"required"`
 	Size   uint64 `gorm:"column:size;not null" json:"size" binding:"required"`
@@ -24,6 +24,13 @@ type Asset struct {
 
 	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
+}
+
+func (t *Asset) BeforeCreate(tx *gorm.DB) (err error) {
+	if t.ID == uuid.Nil {
+		t.ID = uuid.New()
+	}
+	return
 }
 
 func (*Asset) TableName() string {

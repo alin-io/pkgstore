@@ -3,6 +3,7 @@ package npm
 import (
 	"github.com/alin-io/pkgstore/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"io"
 	"log"
 )
@@ -19,7 +20,7 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		return
 	}
 
-	if pkg.ID == 0 {
+	if pkg.ID == uuid.Nil {
 		c.JSON(404, gin.H{"error": "Not Found"})
 		return
 	}
@@ -41,7 +42,7 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		return
 	}
 
-	if fileAsset == nil || fileAsset.ID < 1 {
+	if fileAsset == nil || fileAsset.ID == uuid.Nil {
 		c.JSON(404, gin.H{"error": "Not Found"})
 		return
 	}

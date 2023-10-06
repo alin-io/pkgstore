@@ -3,6 +3,7 @@ package container
 import (
 	"github.com/alin-io/pkgstore/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"io"
 	"log"
 	"strings"
@@ -18,7 +19,7 @@ func (s *Service) DownloadHandler(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Error while trying to get package info"})
 		return
 	}
-	if pkg.ID < 1 {
+	if pkg.ID == uuid.Nil {
 		c.JSON(404, gin.H{"error": "Package not found"})
 		return
 	}

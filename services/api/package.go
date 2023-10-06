@@ -4,14 +4,14 @@ import (
 	"github.com/alin-io/pkgstore/db"
 	"github.com/alin-io/pkgstore/models"
 	"github.com/gin-gonic/gin"
-	"strconv"
+	"github.com/google/uuid"
 )
 
 func (s *Service) ListPackagesHandler(c *gin.Context) {
 	nameFilter := c.Query("q")
 
 	pkgs := make([]models.Package[any], 0)
-	err := db.DB().Model(&pkgs).Preload("Versions").Where("name LIKE ?", "%"+nameFilter+"%").Find(&pkgs).Error
+	err := db.DB().Model(&pkgs).Where("name LIKE ?", "%"+nameFilter+"%").Preload("Versions").Find(&pkgs).Error
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -21,7 +21,7 @@ func (s *Service) ListPackagesHandler(c *gin.Context) {
 
 func (s *Service) GetPackage(c *gin.Context) {
 	packageIdString := c.Param("id")
-	packageId, err := strconv.ParseUint(packageIdString, 10, 64)
+	packageId, err := uuid.Parse(packageIdString)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Invalid package id"})
 		return
@@ -33,7 +33,7 @@ func (s *Service) GetPackage(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	if pkg.ID == 0 {
+	if pkg.ID == uuid.Nil {
 		c.JSON(404, gin.H{"error": "Package not found"})
 		return
 	}
@@ -42,7 +42,7 @@ func (s *Service) GetPackage(c *gin.Context) {
 
 func (s *Service) DeletePackage(c *gin.Context) {
 	packageIdString := c.Param("id")
-	packageId, err := strconv.ParseUint(packageIdString, 10, 64)
+	packageId, err := uuid.Parse(packageIdString)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Invalid package id"})
 		return
@@ -54,7 +54,7 @@ func (s *Service) DeletePackage(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	if pkg.ID == 0 {
+	if pkg.ID == uuid.Nil {
 		c.JSON(404, gin.H{"error": "Package not found"})
 		return
 	}

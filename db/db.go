@@ -13,6 +13,10 @@ var (
 	client *gorm.DB
 )
 
+const (
+	sqliteInitiateQuery = `PRAGMA foreign_keys = ON;`
+)
+
 func InitDatabase() {
 	var err error
 	var dialector gorm.Dialector

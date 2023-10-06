@@ -5,6 +5,7 @@ import (
 	"github.com/alin-io/pkgstore/config"
 	"github.com/alin-io/pkgstore/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (s *Service) MetadataHandler(c *gin.Context) {
@@ -22,7 +23,7 @@ func (s *Service) MetadataHandler(c *gin.Context) {
 		return
 	}
 
-	if !c.GetBool("testing") && (pkg.ID < 1 || len(pkg.Versions) == 0) {
+	if !c.GetBool("testing") && (pkg.ID == uuid.Nil || len(pkg.Versions) == 0) {
 		s.ProxyToPublicRegistry(c)
 		return
 	}
@@ -41,7 +42,7 @@ func (s *Service) MetadataHandler(c *gin.Context) {
 		}
 	}
 
-	if pkg.ID < 1 || len(pkg.Versions) == 0 {
+	if pkg.ID == uuid.Nil || len(pkg.Versions) == 0 {
 		c.JSON(404, gin.H{"error": "Package not found"})
 		return
 	}
